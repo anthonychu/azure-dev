@@ -1,0 +1,12 @@
+# azd project files are not part of the uploaded agent source bundle.
+azure.yaml
+.agentignore
+
+# Local development state and credentials.
+.azure/
+.env
+.env.*
+.git/
+.venv/
+__pycache__/
+*.pyc

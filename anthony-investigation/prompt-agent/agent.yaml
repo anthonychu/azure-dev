@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/AgentSchema/refs/heads/main/schemas/v1.0/PromptAgent.yaml
+
+kind: prompt
+name: prompt-study-agent
+displayName: Prompt Agent Study
+description: A rich prompt agent used to inspect the branch's managed-harness authoring shape.
+model: gpt-4.1-mini
+tool_choice: auto
+structured_inputs:
+  audience:
+    description: The intended audience for the answer.
+    required: false
+tools:
+  - type: function
+    name: calculate_total
+    description: Add two monetary amounts for an order estimate.
+    parameters:
+      type: object
+      properties:
+        first:
+          type: number
+        second:
+          type: number
+      required:
+        - first
+        - second
+    strict: true
+  - type: code_interpreter
+    container: auto
+  - type: azure_ai_search
+    connection: study-search
+    azure_ai_search:
+      index_name: study-index
+connections:
+  - name: study-search
+    category: CognitiveSearch
+    target: https://replace-me.search.windows.net
+    authType: AAD

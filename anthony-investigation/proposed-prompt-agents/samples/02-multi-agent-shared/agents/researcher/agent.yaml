@@ -1,0 +1,14 @@
+kind: prompt
+harness: ghcp
+model: chat
+instructions: ./instructions.md
+skills:
+  - release-notes
+toolboxes:
+  - shared-research-tools
+# azd compiles these entries, the skill, and the referenced toolbox into the
+# primary toolbox. The referenced toolbox becomes a nested MCP tool.
+tools:
+  - type: code_interpreter
+  - type: file_search
+    vector_store: product-docs

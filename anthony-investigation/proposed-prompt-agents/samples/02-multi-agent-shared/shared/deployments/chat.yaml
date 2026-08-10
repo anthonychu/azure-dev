@@ -1,0 +1,8 @@
+name: chat
+model:
+  format: OpenAI
+  name: gpt-4.1-mini
+  version: "2025-04-14"
+sku:
+  name: GlobalStandard
+  capacity: 10

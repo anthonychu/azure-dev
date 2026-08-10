@@ -1,0 +1,56 @@
+# Proposed contract; the current branch does not accept every field yet.
+name: prompt-agent-team
+
+infra:
+  provider: microsoft.foundry
+
+services:
+  foundry-project:
+    host: azure.ai.project
+    deployments:
+      - $ref: ./shared/deployments/chat.yaml
+
+  search:
+    host: azure.ai.connection
+    uses:
+      - foundry-project
+    $ref: ./shared/connections/search.yaml
+
+  shared-research-tools:
+    host: azure.ai.toolbox
+    uses:
+      - foundry-project
+      - search
+    $ref: ./shared/toolboxes/research-tools.yaml
+
+  release-notes:
+    host: azure.ai.skill
+    # `project` is the local service source path.
+    project: ./shared/skills/release-notes
+    uses:
+      - foundry-project
+
+  product-docs:
+    host: azure.ai.vectorstore
+    # `project` is the local service source path.
+    project: ./shared/knowledge/product-docs
+    uses:
+      - foundry-project
+
+  researcher:
+    host: azure.ai.agent
+    # `project` is the local service source path, not the Foundry project.
+    project: ./agents/researcher
+    uses:
+      - foundry-project
+      - shared-research-tools
+      - release-notes
+      - product-docs
+
+  writer:
+    host: azure.ai.agent
+    # `project` is the local service source path, not the Foundry project.
+    project: ./agents/writer
+    uses:
+      - foundry-project
+      - product-docs

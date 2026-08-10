@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: anthony-hosted-agent-study
+
+infra:
+  provider: microsoft.foundry
+
+services:
+  ai-project:
+    host: azure.ai.project
+    deployments:
+      - name: gpt-4.1-mini
+        model:
+          format: OpenAI
+          name: gpt-4.1-mini
+          version: "2025-04-14"
+        sku:
+          name: GlobalStandard
+          capacity: 10
+
+  hosted-study-agent:
+    host: azure.ai.agent
+    project: .
+    uses:
+      - ai-project
+    kind: hosted
+    name: hosted-study-agent
+    description: A source-deployed Python hosted agent for studying the current azd project shape.
+    protocols:
+      - protocol: responses
+        version: "2.0.0"
+    codeConfiguration:
+      runtime: python_3_13
+      entryPoint: main.py
+      dependencyResolution: remote_build
+    startupCommand: python main.py
+    env:
+      LOG_LEVEL: info

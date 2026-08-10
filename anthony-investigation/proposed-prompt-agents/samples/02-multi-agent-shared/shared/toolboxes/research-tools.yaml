@@ -1,0 +1,5 @@
+description: Shared research toolbox deployed once for multiple agents.
+tools:
+  - type: azure_ai_search
+    connection: search
+    index_name: products

@@ -1,0 +1,5 @@
+description: Shared product documentation used by multiple agents.
+include:
+  - "**/*.md"
+chunking:
+  strategy: auto

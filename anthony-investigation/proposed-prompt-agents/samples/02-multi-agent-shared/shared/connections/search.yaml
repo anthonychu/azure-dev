@@ -1,0 +1,5 @@
+category: CognitiveSearch
+target: ${AZURE_SEARCH_ENDPOINT}
+authType: ProjectManagedIdentity
+metadata:
+  resourceId: ${AZURE_SEARCH_RESOURCE_ID}

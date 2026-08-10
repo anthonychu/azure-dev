@@ -1,0 +1,44 @@
+# Proposed target contract; this ordering requires the provider changes in PROPOSAL.md.
+name: prompt-agent-custom-infra
+
+infra:
+  provider: microsoft.foundry
+  layers:
+    - name: app
+      provider: bicep
+      path: ./infra/app
+    - name: foundry
+      path: .
+      dependsOn:
+        - app
+
+services:
+  foundry-project:
+    host: azure.ai.project
+    deployments:
+      - name: chat
+        model:
+          format: OpenAI
+          name: gpt-4.1-mini
+          version: "2025-04-14"
+        sku:
+          name: GlobalStandard
+          capacity: 10
+
+  search:
+    host: azure.ai.connection
+    uses:
+      - foundry-project
+    category: CognitiveSearch
+    target: ${AZURE_SEARCH_ENDPOINT}
+    authType: ProjectManagedIdentity
+    metadata:
+      resourceId: ${AZURE_SEARCH_RESOURCE_ID}
+
+  search-agent:
+    host: azure.ai.agent
+    # `project` is the local service source path, not the Foundry project.
+    project: ./agents/search-agent
+    uses:
+      - foundry-project
+      - search

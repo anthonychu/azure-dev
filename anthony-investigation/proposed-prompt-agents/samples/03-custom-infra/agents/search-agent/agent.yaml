@@ -1,0 +1,8 @@
+kind: prompt
+model: chat
+instructions: ./instructions.md
+# azd compiles this entry into the primary toolbox.
+tools:
+  - type: azure_ai_search
+    connection: search
+    index_name: products

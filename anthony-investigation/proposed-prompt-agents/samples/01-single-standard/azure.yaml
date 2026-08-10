@@ -1,0 +1,25 @@
+# Proposed contract; the current branch does not accept every field yet.
+name: prompt-agent-basic
+
+infra:
+  provider: microsoft.foundry
+
+services:
+  foundry-project:
+    host: azure.ai.project
+    deployments:
+      - name: chat
+        model:
+          format: OpenAI
+          name: gpt-4.1-mini
+          version: "2025-04-14"
+        sku:
+          name: GlobalStandard
+          capacity: 10
+
+  support:
+    host: azure.ai.agent
+    # `project` is the local service source path, not the Foundry project.
+    project: ./agents/support
+    uses:
+      - foundry-project

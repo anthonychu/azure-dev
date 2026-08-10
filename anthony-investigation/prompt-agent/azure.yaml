@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: anthony-prompt-agent-study
+
+infra:
+  provider: microsoft.foundry
+
+services:
+  prompt-study-agent:
+    host: azure.ai.agent
+    project: .
+    config:
+      deployments:
+        - name: gpt-4.1-mini
+          model:
+            format: OpenAI
+            name: gpt-4.1-mini
+            version: "2025-04-14"
+          sku:
+            name: GlobalStandard
+            capacity: 10
+      promptAgent:
+        baseUrl: https://ai.azure.com/api
+        subscriptionId: 00000000-0000-0000-0000-000000000001
+        resourceGroup: test-rg
+        workspace: test-ws
+        apiVersion: 2025-05-15-preview
+        modelEndpoint: https://va-dev-fdp-resource.services.ai.azure.com
