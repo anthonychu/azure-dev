@@ -157,7 +157,7 @@ topology in that file.
 
 ```yaml
 kind: prompt
-model: chat
+model: gpt-5.6-sol
 description: Answers product support questions using grounded documentation.
 instructions: |
   You are a concise product support assistant.
@@ -177,7 +177,7 @@ metadata:
 ```yaml
 kind: prompt
 harness: ghcp
-model: chat
+model: gpt-5.6-sol
 description: Investigates repositories and produces evidence-backed reports.
 instructions: |
   You are a senior technical research coordinator.
@@ -248,11 +248,11 @@ services:
   foundry-project:
     host: azure.ai.project
     deployments:
-      - name: chat
+      - name: gpt-5.6-sol
         model:
           format: OpenAI
-          name: gpt-4.1-mini
-          version: "2025-04-14"
+          name: gpt-5.6-sol
+          version: ${GPT_5_6_SOL_VERSION}
         sku:
           name: GlobalStandard
           capacity: 10
@@ -338,9 +338,9 @@ init should not produce it by default.
 `azure.yaml` commits a desired, reproducible default deployment. Target-specific
 overrides belong in the azd environment, keyed by logical deployment name.
 
-For example, the logical deployment `chat` can be overridden by environment
-values for catalog model, version, SKU, or capacity. Interactive provision may
-offer an available alternative and persist the choice to the environment.
+For example, the logical deployment `gpt-5.6-sol` can be overridden by
+environment values for catalog model, version, SKU, or capacity. Interactive
+provision may offer an available alternative and persist the choice to the environment.
 `--no-prompt` must fail with the exact missing or unavailable setting and never
 choose a different model silently.
 

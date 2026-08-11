@@ -1,5 +1,5 @@
 kind: prompt
-model: chat
+model: gpt-5.6-sol
 description: Answers product support questions using grounded documentation.
 instructions: |
   You are a concise product support assistant.

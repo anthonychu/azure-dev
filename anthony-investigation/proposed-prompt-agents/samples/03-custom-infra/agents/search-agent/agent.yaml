@@ -1,5 +1,5 @@
 kind: prompt
-model: chat
+model: gpt-5.6-sol
 description: Answers product questions using an Azure AI Search index.
 instructions: |
   Answer product questions using the connected Azure AI Search index. State

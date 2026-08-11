@@ -1,5 +1,5 @@
 kind: prompt
-model: chat
+model: gpt-5.6-sol
 description: Writes product documentation grounded in the shared corpus.
 instructions: |
   Write clear product documentation grounded in the shared product corpus.

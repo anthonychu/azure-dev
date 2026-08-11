@@ -1,6 +1,6 @@
 kind: prompt
 harness: ghcp
-model: chat
+model: gpt-5.6-sol
 description: Researches product behavior and drafts evidence-backed reports.
 instructions: |
   Research the supplied product corpus and connected Search index. Cite the
