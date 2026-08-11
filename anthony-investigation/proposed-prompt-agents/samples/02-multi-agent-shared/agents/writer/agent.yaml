@@ -1,7 +1,11 @@
 kind: prompt
 model: chat
-instructions: ./instructions.md
+description: Writes product documentation grounded in the shared corpus.
+instructions: |
+  Write clear product documentation grounded in the shared product corpus.
 # azd compiles this entry into the primary toolbox.
 tools:
   - type: file_search
     vector_store: product-docs
+metadata:
+  owner: product-documentation

@@ -6,7 +6,8 @@ Design draft for discussion. No implementation is included.
 
 Decisions already made:
 
-- Keep `instructions.md`; do not use `AGENTS.md` for deployed-agent behavior.
+- Keep deployed-agent instructions inline in `agent.yaml`; do not use
+  `AGENTS.md` or an implicit `instructions.md` sidecar.
 - Both runtime flavors use `kind: prompt`.
 - A standard Foundry prompt agent omits `harness`, matching the service API.
 - A GitHub Copilot harness agent sets `harness: ghcp`.
@@ -76,8 +77,7 @@ hosted cleanups separately; none block prompt-agent support.
 | Source | Owns | Must not own |
 | --- | --- | --- |
 | `azure.yaml` | Service topology, shared resources, provisioning declarations, `uses:` edges | Resolved Azure IDs, endpoints, secrets, generated agent versions |
-| `agents/<name>/agent.yaml` | Portable **prompt-agent** version definition: kind, optional GHCP harness, logical model, toolbox inputs, policies, behavior options | Subscription, resource group, workspace, Foundry project endpoint |
-| `agents/<name>/instructions.md` | Prompt-agent instructions | Build/test guidance for repository coding agents |
+| `agents/<name>/agent.yaml` | Portable **prompt-agent** version definition: kind, optional GHCP harness, model, inline instructions, toolbox inputs, policies, metadata, and behavior options | Subscription, resource group, workspace, Foundry project endpoint, secrets |
 | Agent-local folders | Private knowledge and private skills owned by one agent | Shared resources consumed by several agents |
 | `shared/` | Source for explicitly shared skills, tool definitions, toolboxes, and knowledge services | Environment bindings |
 | `infra/` | Customer-authored non-Foundry Azure infrastructure, or a fully ejected IaC implementation | Agent instructions and agent-version payloads |
@@ -100,12 +100,10 @@ azd-project/
 |-- agents/
 |   |-- support/
 |   |   |-- agent.yaml
-|   |   |-- instructions.md
 |   |   |-- knowledge/
 |   |   `-- skills/
 |   `-- researcher/
-|       |-- agent.yaml
-|       `-- instructions.md
+|       `-- agent.yaml
 |-- shared/
 |   |-- skills/
 |   |-- tools/
@@ -120,6 +118,37 @@ azd-project/
 `knowledge/` replaces the overly generic `files/` name. A local `knowledge/`
 folder is shorthand for an agent-private vector store and `file_search` tool.
 
+## Flat, self-contained agent manifest
+
+The proposed Foundry `agent.yaml` keeps all declarative agent-version
+configuration in one flat, version-controlled file. Agent-level fields such as
+model, instructions, tools, skills, policies, coordination settings, and
+metadata live together rather than under an `agent:` wrapper or across implicit
+sidecar files.
+
+The manifest maps as directly as practical to the Foundry prompt-agent
+definition. This makes it readable by itself, easier to review in pull
+requests, and suitable for declarative CI apply/update workflows.
+
+Field placement follows these boundaries:
+
+| Concern | Source | Rationale |
+| --- | --- | --- |
+| Agent identity | azd agent-service key, with optional `resourceName` in `azure.yaml` | Avoid duplicating the remote name in the version definition. |
+| Description | `description` in `agent.yaml` | Part of the saved agent definition. |
+| Model | Logical `model` deployment reference in `agent.yaml` | azd resolves a portable logical name to a Foundry model deployment. |
+| System behavior | Inline `instructions` in `agent.yaml` | Uses the Foundry API's field name and keeps behavior reviewable in one file. |
+| Tools | `tools` in `agent.yaml` | Toolbox materialization is an implementation detail. |
+| MCP/toolbox capabilities | `tools`/`toolboxes` in `agent.yaml`; connection resources in `azure.yaml` | Azure endpoint, identity, and credential lifecycle belongs in the azd resource graph/environment. |
+| Skills | `skills` in `agent.yaml`; local bundles under `skills/` | References stay with the agent while bundle content remains independently reusable. |
+| Multi-agent coordination | Add to `agent.yaml` only when Foundry exposes a stable contract | Do not invent a schema before the service contract exists. |
+| Metadata | `metadata` in `agent.yaml` | Part of the saved agent definition. |
+
+“Everything in `agent.yaml`” means every scalar and structured field belonging
+to the saved agent definition. It does not mean embedding skill bundle files,
+knowledge documents, secrets, Azure resource declarations, or azd service
+topology in that file.
+
 ## `agent.yaml` definition
 
 ### Standard Foundry prompt agent
@@ -129,9 +158,16 @@ folder is shorthand for an agent-private vector store and `file_search` tool.
 ```yaml
 kind: prompt
 model: chat
-instructions: ./instructions.md
+description: Answers product support questions using grounded documentation.
+instructions: |
+  You are a concise product support assistant.
+
+  Use the available product knowledge for factual answers. If the knowledge
+  does not contain an answer, say that the information is unavailable.
 tools:
   - type: code_interpreter
+metadata:
+  owner: support-engineering
 ```
 
 ### GitHub Copilot harness agent
@@ -142,9 +178,16 @@ tools:
 kind: prompt
 harness: ghcp
 model: chat
-instructions: ./instructions.md
+description: Investigates repositories and produces evidence-backed reports.
+instructions: |
+  You are a senior technical research coordinator.
+
+  Inspect source and documentation before drawing conclusions. Clearly
+  separate verified facts, assumptions, and recommendations.
 tools:
   - type: code_interpreter
+metadata:
+  owner: developer-productivity
 ```
 
 Rules:
@@ -154,7 +197,8 @@ Rules:
 - `ghcp` compiles to `harness: ghcp` in the API payload.
 - `model` is a logical deployment name declared by the `azure.ai.project`
   service, not a catalog model name or endpoint.
-- `instructions` accepts inline text or an explicit relative Markdown path.
+- `instructions` is an inline string. Use YAML's literal block (`|`) for
+  multiline instructions. There is no implicit `instructions.md` lookup.
 - `tools` and `skills` describe the capabilities of the primary toolbox. Under
   the azd-managed option azd compiles them into an explicit toolbox; under the
   service-managed option azd submits them as top-level agent fields and the
@@ -260,7 +304,7 @@ remain a compatibility alias, but init should not generate it.
 Core service fields remain in `azure.yaml`: `host`, `project`, `uses`,
 `language`, `image`, and `docker` must not be supplied by a root agent `$ref`.
 The prompt-agent file owns fields such as `kind`, `harness`, `model`,
-`instructions`, and `tools`.
+`description`, `instructions`, `tools`, `skills`, and `metadata`.
 
 ## Portable Foundry-project binding
 
@@ -547,7 +591,7 @@ For a new prompt agent (after the existing hosted-or-prompt selection):
 1. Select standard Foundry runtime or GitHub Copilot harness.
 2. Select/add the Foundry project service and logical model deployment.
 3. Select a new or existing Foundry project for the active azd environment.
-4. Scaffold `agents/<name>/agent.yaml` and `instructions.md`.
+4. Scaffold `agents/<name>/agent.yaml` with inline starter instructions.
 5. Add one `azure.ai.agent` service and its `uses:` edges.
 
 Adding a second agent reuses the existing Foundry project service and offers
@@ -575,8 +619,8 @@ Command line:
   connections, RBAC, and customer-authored infrastructure layers.
 4. Persist canonical outputs in `.azure/<env>/.env`.
 
-Provision does not create agent versions or upload instructions, knowledge, or
-skills. It does not modify tracked files.
+Provision does not create agent versions or upload agent manifests, knowledge,
+or skills. It does not modify tracked files.
 
 ### `azd package [agent]`
 
@@ -584,7 +628,6 @@ Prompt agents have a real package phase even though they have no container. It
 must produce a deterministic local artifact containing:
 
 - Resolved portable agent manifest.
-- Instructions.
 - Normalized tools/skills capability manifest and content hash.
 - Explicit primary-toolbox manifest when using the azd-managed option.
 - Agent-private knowledge metadata and content hashes.

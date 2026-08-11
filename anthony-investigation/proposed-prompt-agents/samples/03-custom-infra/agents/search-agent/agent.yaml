@@ -1,8 +1,13 @@
 kind: prompt
 model: chat
-instructions: ./instructions.md
+description: Answers product questions using an Azure AI Search index.
+instructions: |
+  Answer product questions using the connected Azure AI Search index. State
+  when the index does not contain enough evidence to answer.
 # azd compiles this entry into the primary toolbox.
 tools:
   - type: azure_ai_search
     connection: search
     index_name: products
+metadata:
+  owner: search-platform

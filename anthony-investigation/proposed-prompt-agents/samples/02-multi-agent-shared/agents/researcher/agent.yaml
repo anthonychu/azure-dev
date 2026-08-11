@@ -1,7 +1,10 @@
 kind: prompt
 harness: ghcp
 model: chat
-instructions: ./instructions.md
+description: Researches product behavior and drafts evidence-backed reports.
+instructions: |
+  Research the supplied product corpus and connected Search index. Cite the
+  source used for each factual conclusion.
 skills:
   - release-notes
 toolboxes:
@@ -12,3 +15,5 @@ tools:
   - type: code_interpreter
   - type: file_search
     vector_store: product-docs
+metadata:
+  owner: developer-productivity

@@ -1,6 +1,13 @@
 kind: prompt
 model: chat
-instructions: ./instructions.md
+description: Answers product support questions using grounded documentation.
+instructions: |
+  You are a concise product support assistant.
+
+  Use the private knowledge corpus for product facts. If the corpus does not
+  contain an answer, say that the information is unavailable.
 # azd compiles these entries into the primary toolbox.
 tools:
   - type: code_interpreter
+metadata:
+  owner: support-engineering
