@@ -17,28 +17,29 @@ import (
 
 // routineCreateFlags holds validated input for the create command.
 type routineCreateFlags struct {
-	name            string
-	trigger         string
-	timeZone        string
-	at              string
-	cronExpression  string
-	connectionID    string
-	owner           string
-	repository      string
-	issueEvent      string
-	provider        string
-	eventName       string
-	parametersJSON  string
-	action          string
-	agentName       string
-	agentEndpointID string
-	conversationID  string
-	sessionID       string
-	description     string
-	enabled         bool
-	force           bool
-	file            string
-	output          string
+	name             string
+	trigger          string
+	timeZone         string
+	at               string
+	cronExpression   string
+	connectionID     string
+	owner            string
+	repository       string
+	issueEvent       string
+	provider         string
+	eventName        string
+	parametersJSON   string
+	action           string
+	agentName        string
+	agentEndpointID  string
+	conversationID   string
+	sessionID        string
+	dispatchIdentity string
+	description      string
+	enabled          bool
+	force            bool
+	file             string
+	output           string
 }
 
 func newRoutineCreateCommand(extCtx *azdext.ExtensionContext) *cobra.Command {
@@ -94,6 +95,8 @@ Use --file to create from a YAML/JSON manifest file instead of individual flags.
 		"Existing conversation to continue (for agent-response action, preview)")
 	cmd.Flags().StringVar(&flags.sessionID, "session-id", "",
 		"Existing session to continue (for agent-invoke action)")
+	cmd.Flags().StringVar(&flags.dispatchIdentity, "dispatch-identity", routines.RoutineDispatchIdentityAgent,
+		"Create-time dispatch identity: agent (default) or creator")
 	cmd.Flags().StringVar(&flags.description, "description", "",
 		"Description for the routine")
 	cmd.Flags().BoolVar(&flags.enabled, "enabled", true,
@@ -130,6 +133,9 @@ func runRoutineCreate(ctx context.Context, cmd *cobra.Command, flags *routineCre
 	}
 	if flags.description != "" {
 		body.Description = flags.description
+	}
+	if cmd.Flags().Changed("dispatch-identity") {
+		body.Authorization = &routines.RoutineAuthorization{Identity: flags.dispatchIdentity}
 	}
 
 	if flags.file != "" {
@@ -171,6 +177,9 @@ func runRoutineCreate(ctx context.Context, cmd *cobra.Command, flags *routineCre
 			return err
 		}
 		body.Action = &action
+	}
+	if err := validateRoutineAuthorization(body.Authorization); err != nil {
+		return err
 	}
 
 	// Default Enabled to true when neither the flag nor the manifest provided

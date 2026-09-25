@@ -183,6 +183,9 @@ func parseRoutineServiceConfig(svc *azdext.ServiceConfig, projectRoot string) (*
 	if err := json.Unmarshal(b, body); err != nil {
 		return nil, fmt.Errorf("parsing routine service %q config: %w", svc.GetName(), err)
 	}
+	if err := validateRoutineAuthorization(body.Authorization); err != nil {
+		return nil, err
+	}
 	return body, nil
 }
 

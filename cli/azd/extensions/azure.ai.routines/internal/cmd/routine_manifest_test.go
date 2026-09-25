@@ -24,6 +24,9 @@ func TestReadRoutineManifest_JSON(t *testing.T) {
 	r := &routines.Routine{
 		Name:        "test-routine",
 		Description: "a test routine",
+		Authorization: &routines.RoutineAuthorization{
+			Identity: routines.RoutineDispatchIdentityCreator,
+		},
 		Triggers: map[string]routines.RoutineTrigger{
 			"default": {Type: "schedule", CronExpression: "0 8 * * 1-5"},
 		},
@@ -39,6 +42,8 @@ func TestReadRoutineManifest_JSON(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "test-routine", got.Name)
 	assert.Equal(t, "a test routine", got.Description)
+	require.NotNil(t, got.Authorization)
+	assert.Equal(t, routines.RoutineDispatchIdentityCreator, got.Authorization.Identity)
 	assert.Equal(t, "schedule", got.Triggers["default"].Type)
 	assert.Equal(t, "0 8 * * 1-5", got.Triggers["default"].CronExpression)
 	require.NotNil(t, got.Action)
@@ -49,6 +54,8 @@ func TestReadRoutineManifest_YAML(t *testing.T) {
 	t.Parallel()
 	yaml := `name: yaml-routine
 description: yaml desc
+authorization:
+  identity: creator
 triggers:
   default:
     type: timer
@@ -63,6 +70,8 @@ action:
 	got, err := readRoutineManifest(path)
 	require.NoError(t, err)
 	assert.Equal(t, "yaml-routine", got.Name)
+	require.NotNil(t, got.Authorization)
+	assert.Equal(t, routines.RoutineDispatchIdentityCreator, got.Authorization.Identity)
 	assert.Equal(t, "timer", got.Triggers["default"].Type)
 	require.NotNil(t, got.Action)
 	assert.Equal(t, "yaml-agent-name", got.Action.AgentName)
@@ -86,6 +95,15 @@ func TestReadRoutineManifest_UnsupportedExtension(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestReadRoutineManifest_InvalidDispatchIdentity(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "routine.yaml")
+	require.NoError(t, os.WriteFile(path, []byte("authorization:\n  identity: unknown\n"), 0600))
+
+	_, err := readRoutineManifest(path)
+	assert.ErrorContains(t, err, "unsupported dispatch identity")
+}
+
 // ─── mergeRoutineFromFile ─────────────────────────────────────────────────────
 
 func TestMergeRoutineFromFile_FileFieldsMergedWhenBodyEmpty(t *testing.T) {
@@ -93,13 +111,18 @@ func TestMergeRoutineFromFile_FileFieldsMergedWhenBodyEmpty(t *testing.T) {
 	body := &routines.Routine{Name: "from-cli"}
 	file := &routines.Routine{
 		Description: "from file",
-		Triggers:    map[string]routines.RoutineTrigger{"default": {Type: "schedule", CronExpression: "* * * * *"}},
-		Action:      &routines.RoutineAction{Type: "invoke_agent_responses_api", AgentName: "a"},
+		Authorization: &routines.RoutineAuthorization{
+			Identity: routines.RoutineDispatchIdentityCreator,
+		},
+		Triggers: map[string]routines.RoutineTrigger{"default": {Type: "schedule", CronExpression: "* * * * *"}},
+		Action:   &routines.RoutineAction{Type: "invoke_agent_responses_api", AgentName: "a"},
 	}
 	mergeRoutineFromFile(body, file)
 
 	assert.Equal(t, "from-cli", body.Name, "name must not be overwritten by file")
 	assert.Equal(t, "from file", body.Description)
+	require.NotNil(t, body.Authorization)
+	assert.Equal(t, routines.RoutineDispatchIdentityCreator, body.Authorization.Identity)
 	assert.Equal(t, "schedule", body.Triggers["default"].Type)
 	require.NotNil(t, body.Action)
 	assert.Equal(t, "a", body.Action.AgentName)
@@ -111,6 +134,9 @@ func TestMergeRoutineFromFile_BodyFieldsWinOverFile(t *testing.T) {
 		Name:        "from-cli",
 		Description: "cli description",
 		Enabled:     new(true),
+		Authorization: &routines.RoutineAuthorization{
+			Identity: routines.RoutineDispatchIdentityCreator,
+		},
 		Triggers: map[string]routines.RoutineTrigger{
 			"default": {Type: "timer", At: "2026-01-01T00:00:00Z"},
 		},
@@ -118,6 +144,9 @@ func TestMergeRoutineFromFile_BodyFieldsWinOverFile(t *testing.T) {
 	}
 	file := &routines.Routine{
 		Description: "file description",
+		Authorization: &routines.RoutineAuthorization{
+			Identity: routines.RoutineDispatchIdentityAgent,
+		},
 		Triggers: map[string]routines.RoutineTrigger{
 			"default": {Type: "schedule", CronExpression: "* * * * *"},
 		},
@@ -126,9 +155,23 @@ func TestMergeRoutineFromFile_BodyFieldsWinOverFile(t *testing.T) {
 	mergeRoutineFromFile(body, file)
 
 	assert.Equal(t, "cli description", body.Description, "body description must win")
+	require.NotNil(t, body.Authorization)
+	assert.Equal(t, routines.RoutineDispatchIdentityCreator, body.Authorization.Identity)
 	assert.Equal(t, "timer", body.Triggers["default"].Type, "body trigger must win")
 	require.NotNil(t, body.Action)
 	assert.Equal(t, "cli-agent", body.Action.AgentName, "body action must win")
+}
+
+func TestValidateRoutineAuthorization(t *testing.T) {
+	t.Parallel()
+	assert.NoError(t, validateRoutineAuthorization(nil))
+	assert.NoError(t, validateRoutineAuthorization(&routines.RoutineAuthorization{
+		Identity: routines.RoutineDispatchIdentityAgent,
+	}))
+	assert.NoError(t, validateRoutineAuthorization(&routines.RoutineAuthorization{
+		Identity: routines.RoutineDispatchIdentityCreator,
+	}))
+	assert.Error(t, validateRoutineAuthorization(&routines.RoutineAuthorization{Identity: "unknown"}))
 }
 
 // ─── overwriteRoutineFromFile ──────────────────────────────────────────────────

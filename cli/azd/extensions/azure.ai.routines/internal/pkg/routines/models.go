@@ -67,13 +67,19 @@ func (ft FlexibleTimestamp) String() string {
 
 // Routine represents a Foundry routine resource.
 type Routine struct {
-	Name        string                    `json:"name,omitempty"        yaml:"name,omitempty"`
-	Description string                    `json:"description,omitempty" yaml:"description,omitempty"`
-	Enabled     *bool                     `json:"enabled,omitempty"     yaml:"enabled,omitempty"`
-	Triggers    map[string]RoutineTrigger `json:"triggers,omitempty"    yaml:"triggers,omitempty"`
-	Action      *RoutineAction            `json:"action,omitempty"      yaml:"action,omitempty"`
-	CreatedAt   FlexibleTimestamp         `json:"created_at,omitempty"  yaml:"created_at,omitempty"`
-	UpdatedAt   FlexibleTimestamp         `json:"updated_at,omitempty"  yaml:"updated_at,omitempty"`
+	Name          string                    `json:"name,omitempty"          yaml:"name,omitempty"`
+	Description   string                    `json:"description,omitempty"   yaml:"description,omitempty"`
+	Enabled       *bool                     `json:"enabled,omitempty"       yaml:"enabled,omitempty"`
+	Authorization *RoutineAuthorization     `json:"authorization,omitempty" yaml:"authorization,omitempty"`
+	Triggers      map[string]RoutineTrigger `json:"triggers,omitempty"      yaml:"triggers,omitempty"`
+	Action        *RoutineAction            `json:"action,omitempty"        yaml:"action,omitempty"`
+	CreatedAt     FlexibleTimestamp         `json:"created_at,omitempty"    yaml:"created_at,omitempty"`
+	UpdatedAt     FlexibleTimestamp         `json:"updated_at,omitempty"    yaml:"updated_at,omitempty"`
+}
+
+// RoutineAuthorization configures the identity used to dispatch a routine.
+type RoutineAuthorization struct {
+	Identity string `json:"identity,omitempty" yaml:"identity,omitempty"`
 }
 
 // RoutineTrigger is the discriminated union for routine triggers.
@@ -187,6 +193,12 @@ type DispatchRoutineResponse struct {
 const (
 	GitHubIssueEventOpened = "opened"
 	GitHubIssueEventClosed = "closed"
+)
+
+// Routine dispatch identity values accepted by the service.
+const (
+	RoutineDispatchIdentityAgent   = "agent"
+	RoutineDispatchIdentityCreator = "creator"
 )
 
 // TriggerCLIToWire maps CLI --trigger aliases to wire type values.

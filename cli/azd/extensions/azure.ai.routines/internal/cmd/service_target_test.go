@@ -28,6 +28,9 @@ func TestParseRoutineServiceConfig_ServiceLevel(t *testing.T) {
 	props, err := structpb.NewStruct(map[string]any{
 		"description": "nightly summary",
 		"enabled":     true,
+		"authorization": map[string]any{
+			"identity": "creator",
+		},
 		"triggers": map[string]any{
 			"default": map[string]any{"type": "recurring", "cron_expression": "0 9 * * *"},
 		},
@@ -44,6 +47,8 @@ func TestParseRoutineServiceConfig_ServiceLevel(t *testing.T) {
 	assert.Equal(t, "nightly summary", body.Description)
 	require.NotNil(t, body.Enabled)
 	assert.True(t, *body.Enabled)
+	require.NotNil(t, body.Authorization)
+	assert.Equal(t, "creator", body.Authorization.Identity)
 	require.Contains(t, body.Triggers, "default")
 	assert.Equal(t, "recurring", body.Triggers["default"].Type)
 	assert.Equal(t, "0 9 * * *", body.Triggers["default"].CronExpression)
@@ -81,6 +86,20 @@ func TestParseRoutineServiceConfig_MixedShapeUsesInlineProperties(t *testing.T) 
 	assert.Empty(t, body.Description)
 }
 
+func TestParseRoutineServiceConfig_RejectsInvalidDispatchIdentity(t *testing.T) {
+	t.Parallel()
+
+	_, err := parseRoutineServiceConfig(&azdext.ServiceConfig{
+		Name: "invalid-identity",
+		Host: aiRoutineHost,
+		AdditionalProperties: mustStruct(t, map[string]any{
+			"authorization": map[string]any{"identity": "unknown"},
+		}),
+	}, "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported dispatch identity")
+}
+
 func TestParseRoutineServiceConfig_FileRef(t *testing.T) {
 	t.Parallel()
 
@@ -88,6 +107,8 @@ func TestParseRoutineServiceConfig_FileRef(t *testing.T) {
 	require.NoError(t, os.WriteFile(
 		filepath.Join(root, "routine.yaml"),
 		[]byte("description: referenced routine\n"+
+			"authorization:\n"+
+			"  identity: creator\n"+
 			"triggers:\n"+
 			"  default:\n"+
 			"    type: schedule\n"+
@@ -111,6 +132,8 @@ func TestParseRoutineServiceConfig_FileRef(t *testing.T) {
 	}, root)
 	require.NoError(t, err)
 	assert.Equal(t, "referenced routine", body.Description)
+	require.NotNil(t, body.Authorization)
+	assert.Equal(t, "creator", body.Authorization.Identity)
 	assert.Equal(t, "0 2 * * *", body.Triggers["default"].CronExpression)
 	require.NotNil(t, body.Action)
 	assert.Equal(t, "summarizer", body.Action.AgentName)

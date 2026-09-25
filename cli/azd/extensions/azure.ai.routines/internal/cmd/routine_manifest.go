@@ -61,6 +61,9 @@ func readRoutineManifest(path string) (*routines.Routine, error) {
 			"use a .yaml, .yml, or .json file",
 		)
 	}
+	if err := validateRoutineAuthorization(r.Authorization); err != nil {
+		return nil, err
+	}
 
 	return &r, nil
 }
@@ -76,11 +79,30 @@ func mergeRoutineFromFile(body *routines.Routine, file *routines.Routine) {
 	if file.Enabled != nil && body.Enabled == nil {
 		body.Enabled = file.Enabled
 	}
+	if file.Authorization != nil && body.Authorization == nil {
+		body.Authorization = file.Authorization
+	}
 	if len(file.Triggers) > 0 && len(body.Triggers) == 0 {
 		body.Triggers = file.Triggers
 	}
 	if file.Action != nil && body.Action == nil {
 		body.Action = file.Action
+	}
+}
+
+func validateRoutineAuthorization(authorization *routines.RoutineAuthorization) error {
+	if authorization == nil {
+		return nil
+	}
+	switch authorization.Identity {
+	case routines.RoutineDispatchIdentityAgent, routines.RoutineDispatchIdentityCreator:
+		return nil
+	default:
+		return exterrors.Validation(
+			exterrors.CodeInvalidParameter,
+			fmt.Sprintf("unsupported dispatch identity %q", authorization.Identity),
+			"supported values: agent, creator",
+		)
 	}
 }
 

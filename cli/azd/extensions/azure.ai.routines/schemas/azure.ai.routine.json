@@ -18,6 +18,19 @@
       "type": "boolean",
       "description": "Whether the routine is enabled."
     },
+    "authorization": {
+      "type": "object",
+      "description": "Create-time dispatch authorization. The service defaults to agent identity when omitted. To change this setting after creation, delete and recreate the routine.",
+      "additionalProperties": false,
+      "required": ["identity"],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "enum": ["agent", "creator"],
+          "description": "Identity used when dispatching the routine."
+        }
+      }
+    },
     "triggers": {
       "type": "object",
       "description": "Triggers keyed by a user-defined identifier (commonly 'default'). Each trigger selects a variant via its type (e.g. timer, recurring, github_issue, custom).",

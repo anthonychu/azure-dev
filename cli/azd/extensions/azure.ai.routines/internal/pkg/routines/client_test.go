@@ -219,6 +219,8 @@ func TestPutRoutine_Created(t *testing.T) {
 			return
 		}
 		assert.Equal(t, "new-routine", body.Name)
+		require.NotNil(t, body.Authorization)
+		assert.Equal(t, RoutineDispatchIdentityCreator, body.Authorization.Identity)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -226,7 +228,11 @@ func TestPutRoutine_Created(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(body)
 	}))
 
-	input := &Routine{Name: "new-routine", Description: "desc"}
+	input := &Routine{
+		Name:          "new-routine",
+		Description:   "desc",
+		Authorization: &RoutineAuthorization{Identity: RoutineDispatchIdentityCreator},
+	}
 	got, err := client.PutRoutine(t.Context(), "new-routine", input)
 	require.NoError(t, err)
 	assert.Equal(t, "new-routine", got.Name)

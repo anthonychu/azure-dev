@@ -38,6 +38,20 @@ func TestDefaultKeys(t *testing.T) {
 	assert.Equal(t, "default", DefaultTriggerKey)
 }
 
+func TestRoutineAuthorization_RoundTrip(t *testing.T) {
+	t.Parallel()
+	raw := []byte(`{"name":"daily","authorization":{"identity":"creator"}}`)
+
+	var routine Routine
+	require.NoError(t, json.Unmarshal(raw, &routine))
+	require.NotNil(t, routine.Authorization)
+	assert.Equal(t, RoutineDispatchIdentityCreator, routine.Authorization.Identity)
+
+	data, err := json.Marshal(routine)
+	require.NoError(t, err)
+	assert.JSONEq(t, string(raw), string(data))
+}
+
 func TestTriggerCLIToWire_NoUnknownEntries(t *testing.T) {
 	t.Parallel()
 	// Ensure no extra/typo entries sneak in.

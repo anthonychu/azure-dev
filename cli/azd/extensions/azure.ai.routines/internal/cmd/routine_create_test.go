@@ -8,9 +8,17 @@ import (
 
 	"azure.ai.routines/internal/pkg/routines"
 
+	"github.com/azure/azure-dev/cli/azd/pkg/azdext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestRoutineCreateCommand_DispatchIdentityFlag(t *testing.T) {
+	t.Parallel()
+	flag := newRoutineCreateCommand(&azdext.ExtensionContext{}).Flags().Lookup("dispatch-identity")
+	require.NotNil(t, flag)
+	assert.Equal(t, routines.RoutineDispatchIdentityAgent, flag.DefValue)
+}
 
 // ─── buildTrigger ─────────────────────────────────────────────────────────────
 

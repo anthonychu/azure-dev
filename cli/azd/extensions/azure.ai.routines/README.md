@@ -67,6 +67,33 @@ services:
 
 References are resolved during `azd deploy`. Remote URLs are not supported.
 
+## Choose a dispatch identity
+
+Routines dispatch as the target agent identity by default. Use creator identity when the invoked
+agent needs delegated access from the person who creates the routine:
+
+```bash
+azd ai routine create morning-briefing \
+  --trigger recurring \
+  --cron "0 8 * * *" \
+  --time-zone America/Los_Angeles \
+  --action agent-response \
+  --agent-name personal-productivity \
+  --dispatch-identity creator
+```
+
+The same setting is supported in YAML and JSON manifests and in inline or file-backed
+`host: azure.ai.routine` services:
+
+```yaml
+authorization:
+  identity: creator
+```
+
+Dispatch identity is applied only when the service creates the routine. Updates preserve the
+existing identity, even when an update request includes `authorization`. Delete and recreate the
+routine to change its dispatch identity.
+
 ## Timeout configuration
 
 Routine read API calls default to a 30-second HTTP request timeout.
